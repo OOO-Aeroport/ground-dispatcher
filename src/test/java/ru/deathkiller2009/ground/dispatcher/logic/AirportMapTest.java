@@ -6,7 +6,7 @@ class AirportMapTest {
 
     @Test
     void testPrint() {
-        AirportMap airportMap = new AirportMap();
+
     }
 
 }

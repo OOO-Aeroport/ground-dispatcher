@@ -52,6 +52,8 @@ public class MapDao implements RowMapper<GraphPoint> {
         return jdbcTemplate.query("SELECT * FROM adjacency_list", new AdjacencyRowMapper());
     }
 
+    //todo Добавить сохранение в БД раз в какое-то время
+
     class AdjacencyRowMapper implements RowMapper<Adjacency> {
         @Override
         public Adjacency mapRow(ResultSet rs, int rowNum) throws SQLException {
