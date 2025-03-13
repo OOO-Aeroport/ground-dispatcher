@@ -3,6 +3,7 @@ package ru.deathkiller2009.ground.dispatcher.service;
 import org.springframework.stereotype.Service;
 import ru.deathkiller2009.ground.dispatcher.logic.AirportMap;
 import ru.deathkiller2009.ground.dispatcher.logic.GraphPoint;
+import ru.deathkiller2009.ground.dispatcher.logic.VehicleType;
 
 import java.util.List;
 
@@ -43,12 +44,18 @@ public class GroundService {
                 .toList();
     }
 
-    public Long checkIfCarCanGetOutOfGarage() {
-        return airportMap.checkIfCarCanGetOutOfGarage();
+    public boolean checkIfCarCanGetOutOfGarage(VehicleType type) {
+        return airportMap.checkIfCarCanGetOutOfGarage(type);
     }
 
     public List<Long> buildRouteForGarage(long initialPoint) {
         return airportMap.buildRouteForGarage(initialPoint)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> buildRouteForPlane(long initialPoint, long planeId) {
+        return airportMap.buildRouteForPlane(initialPoint, planeId)
                 .stream().map(GraphPoint::getId)
                 .toList();
     }

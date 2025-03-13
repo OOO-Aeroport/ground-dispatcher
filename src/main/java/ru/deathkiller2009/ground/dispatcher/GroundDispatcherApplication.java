@@ -16,14 +16,4 @@ public class GroundDispatcherApplication {
         SpringApplication.run(GroundDispatcherApplication.class, args);
     }
 
-    @Bean
-    public CommandLineRunner commandLineRunner(AirportMap airportMap) {
-        return args -> {
-            List<GraphPoint> graphPoints = airportMap.buildRouteForGas(297);
-            for (int i = 0; i < graphPoints.size(); i++) {
-                airportMap.checkIfCarCanGo(graphPoints.get(i).getId(), graphPoints.get(i + 1).getId());
-            }
-        };
-    }
-
 }

@@ -1,8 +1,10 @@
 package ru.deathkiller2009.ground.dispatcher.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import ru.deathkiller2009.ground.dispatcher.logic.VehicleType;
 import ru.deathkiller2009.ground.dispatcher.service.GroundService;
 
 import java.util.List;
@@ -21,9 +23,9 @@ public class GroundController {
         return groundService.buildRouteForGas(initialPoint);
     }
 
-    @GetMapping("/{current-point}/{target}")
-    public Boolean canGoToPoint(@PathVariable("current-point") long initialPoint, @PathVariable("target") long targetPoint) {
-        return groundService.checkIfCarCanGo(initialPoint, targetPoint);
+    @GetMapping("/point/{current-point}/{target}")
+    public ResponseEntity<Boolean> canGoToPoint(@PathVariable("current-point") long initialPoint, @PathVariable("target") int targetPoint) {
+        return ResponseEntity.ok(groundService.checkIfCarCanGo(initialPoint, targetPoint));
     }
 
     @GetMapping("/{current-point}/terminal1")
@@ -41,10 +43,16 @@ public class GroundController {
         return groundService.buildRouteForLuggage(initialPoint);
     }
 
-    @GetMapping("/garage") //todo добавить тип машинок к url'ам?
-    public Long canGetOutOfGarage() {
-        return groundService.checkIfCarCanGetOutOfGarage(); //todo Понять что дописать и дописать
+    @GetMapping("/garage/{vehicleType}") //todo добавить тип машинок к url'ам?
+    public Boolean canGetOutOfGarage(@PathVariable("vehicleType") VehicleType type) {
+        return groundService.checkIfCarCanGetOutOfGarage(type); //todo Понять что дописать и дописать
     }
+
+    @GetMapping("/plane/{current-point}/{planeId}")
+    public List<Long> getRouteToPlane(@PathVariable("current-point") long initialPoint, @PathVariable("planeId") long planeId) {
+        return groundService.buildRouteForPlane(initialPoint, planeId);
+    }
+
     //todo Метод на выезд из гаража
 
     @GetMapping("/{current-point}/garage")

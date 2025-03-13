@@ -15,7 +15,7 @@ import ru.deathkiller2009.ground.dispatcher.logic.exception.NoSpaceException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
+//todo Добавить точки для самолетов
 @Component
 public class AirportMap {
 
@@ -30,6 +30,10 @@ public class AirportMap {
     private List<GraphPoint> garage;
 
     private List<GraphPoint> luggage;
+
+    private List<GraphPoint> planeParkSpot;
+
+    private Map<Long, List<GraphPoint>> carStopPoints;
 
     private final MapDao mapDao;
 
@@ -47,13 +51,26 @@ public class AirportMap {
         terminal2 = List.of(graphPoints.get(29L), graphPoints.get(30L), graphPoints.get(31L), graphPoints.get(32L));
         garage = List.of(graphPoints.get(297L), graphPoints.get(298L), graphPoints.get(299L), graphPoints.get(300L));
         luggage = List.of(graphPoints.get(17L), graphPoints.get(18L), graphPoints.get(19L), graphPoints.get(20L));
+        planeParkSpot = List.of(graphPoints.get(34L), graphPoints.get(38L), graphPoints.get(42L), graphPoints.get(46L),
+                graphPoints.get(98L), graphPoints.get(102L), graphPoints.get(106L), graphPoints.get(110L));
+        carStopPoints = Map.of(
+                34L, List.of(graphPoints.get(33L), graphPoints.get(35L)),
+                38L, List.of(graphPoints.get(37L), graphPoints.get(39L)),
+                42L, List.of(graphPoints.get(41L), graphPoints.get(43L)),
+                46L, List.of(graphPoints.get(45L), graphPoints.get(47L)),
+                98L, List.of(graphPoints.get(97L), graphPoints.get(99L)),
+                102L, List.of(graphPoints.get(101L), graphPoints.get(103L)),
+                106L, List.of(graphPoints.get(105L), graphPoints.get(107L)),
+                110L, List.of(graphPoints.get(109L), graphPoints.get(111L))
+        );
+
         graphPoints.values().forEach(map::addVertex);
         System.out.println(map);
         edges = mapDao.getEdges();
         edges.forEach(adjacency -> map.addEdge(adjacency.getNode(), adjacency.getNeighbourNode(), new DefaultEdge()));
     }
 
-    private List<GraphPoint> buildRoute(long initialPoint, long targetPoint) { //Todo Выбирать target точку
+    private List<GraphPoint> buildRoute(long initialPoint, long targetPoint) {
         Graph<GraphPoint, DefaultEdge> clearedGraph = removeObstacles();
         BFSShortestPath<GraphPoint, DefaultEdge> bfsShortestPath = new BFSShortestPath<>(clearedGraph);
         Map<Long, GraphPoint> vertexes = clearedGraph.vertexSet().stream()
@@ -84,7 +101,7 @@ public class AirportMap {
         Optional<GraphPoint> gasPoint = gas.stream().filter(graphPoint -> graphPoint.getStatus() == Status.EMPTY)
                 .findAny();
         Random random = new Random();
-        return gasPoint.map(graphPoint -> buildRoute(initialPoint, graphPoint.getId())).orElse(buildRoute(initialPoint, gas.get(random.nextInt(0, garage.size())).getId()));
+        return gasPoint.map(graphPoint -> buildRoute(initialPoint, graphPoint.getId())).orElse(buildRoute(initialPoint, gas.get(random.nextInt(0, garage.size() - 1)).getId()));
     }
 
     public boolean checkIfCarCanGo(long initialPoint, long targetPoint) { //todo Добавить потокобезопасность
@@ -123,12 +140,12 @@ public class AirportMap {
                 .orElse(buildRoute(initialPoint, luggage.get(random.nextInt(0, garage.size())).getId()));
     }
 
-    public Long checkIfCarCanGetOutOfGarage() {
-        return garage.stream().filter(graphPoint -> graphPoint.getStatus() == Status.EMPTY).findAny()
-                .map(graphPoint -> {
-                    graphPoint.setStatus(Status.OCCUPIED);
-                    return graphPoint.getId();
-                }).orElseThrow();
+    public boolean checkIfCarCanGetOutOfGarage(VehicleType type) {
+
+        if (Objects.requireNonNull(type) == VehicleType.FUEL_TRUCK) {
+            return garage.stream().anyMatch(graphPoint -> graphPoint.getId() == 297L && graphPoint.getStatus() == Status.EMPTY);
+        }
+        return false;
     }
 
     public List<GraphPoint> buildRouteForGarage(long initialPoint) {
@@ -137,5 +154,14 @@ public class AirportMap {
         Random random = new Random();
         return garagePoints.map(graphPoint -> buildRoute(initialPoint, graphPoint.getId()))
                 .orElse(buildRoute(initialPoint, garage.get(random.nextInt(0, garage.size())).getId()));
+    }
+
+    public List<GraphPoint> buildRouteForPlane(long initialPoint, long planeId) { //может ли быть такое, что точка не занята самолетом с указанным id?
+        GraphPoint plane = planeParkSpot.stream().filter(graphPoint -> graphPoint.getVehicleId() == planeId)
+                .findFirst().get();
+        Random random = new Random();
+        GraphPoint endPoint = carStopPoints.get(plane.getId()).stream().filter(graphPoint -> graphPoint.getStatus() == Status.EMPTY)
+                .findAny().orElse(carStopPoints.get(plane.getId()).get(random.nextInt(0, carStopPoints.size())));
+        return buildRoute(initialPoint, endPoint.getId());
     }
 }
