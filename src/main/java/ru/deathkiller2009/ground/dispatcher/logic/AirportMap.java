@@ -14,6 +14,7 @@ import ru.deathkiller2009.ground.dispatcher.MapDao;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class AirportMap {
@@ -37,6 +38,10 @@ public class AirportMap {
     private final MapDao mapDao;
 
     private List<Adjacency> edges;
+
+    private List<GraphPoint> runway1;
+
+    private List<GraphPoint> runway2;
 
     public AirportMap(MapDao mapDao) {
         this.mapDao = mapDao;
@@ -63,6 +68,16 @@ public class AirportMap {
                 110L, List.of(graphPoints.get(109L), graphPoints.get(111L))
         );
 
+        runway1 = Stream.iterate(171L, integer -> integer + 1)
+                .limit(40)
+                .map(graphPoints::get)
+                .toList();
+
+        runway2 = Stream.iterate(226L, aLong -> aLong + 1)
+                .limit(40)
+                .map(graphPoints::get)
+                .toList();
+
         graphPoints.values().forEach(map::addVertex);
         System.out.println(map);
         edges = mapDao.getEdges();
@@ -72,6 +87,23 @@ public class AirportMap {
         plane.setStatus(Status.OCCUPIED);
         plane.setVehicleType(VehicleType.PLANE);
         plane.setVehicleId(4L);
+
+        GraphPoint car1 = graphPoints.get(224L);
+        car1.setStatus(Status.OCCUPIED);
+        car1.setVehicleType(VehicleType.FOOD_TRUCK);
+
+        GraphPoint car2 = graphPoints.get(222L);
+        car2.setStatus(Status.OCCUPIED);
+        car2.setVehicleType(VehicleType.PASSENGER_BUS);
+
+        GraphPoint car3 = graphPoints.get(223L);
+        car3.setStatus(Status.OCCUPIED);
+        car3.setVehicleType(VehicleType.FUEL_TRUCK);
+
+        GraphPoint car4 = graphPoints.get(225L);
+        car4.setStatus(Status.OCCUPIED);
+        car4.setVehicleType(VehicleType.FUEL_TRUCK);
+
     }
 
     private List<GraphPoint> buildRoute(long initialPoint, long targetPoint) {
@@ -80,6 +112,11 @@ public class AirportMap {
         Map<Long, GraphPoint> vertexes = clearedGraph.vertexSet().stream()
                 .collect(Collectors.toMap(GraphPoint::getId, Function.identity()));
         GraphPath<GraphPoint, DefaultEdge> path = bfsShortestPath.getPath(vertexes.get(initialPoint), vertexes.get(targetPoint));
+
+        if (path == null) {
+
+        }
+
         return path.getVertexList();
     }
 
@@ -144,7 +181,7 @@ public class AirportMap {
                 .orElse(buildRoute(initialPoint, luggage.get(random.nextInt(0, garage.size())).getId()));
     }
 
-    public boolean checkIfCarCanGetOutOfGarage(VehicleType type) {
+    public boolean checkIfCarCanGetOutOfGarage(VehicleType type) { //todo В конце машинка должна исчезать с поля
 
         if (Objects.requireNonNull(type) == VehicleType.FUEL_TRUCK) {
             return garage.stream().anyMatch(graphPoint -> graphPoint.getId() == 297L && graphPoint.getStatus() == Status.EMPTY);

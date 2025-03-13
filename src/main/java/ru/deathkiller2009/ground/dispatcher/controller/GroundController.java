@@ -59,6 +59,11 @@ public class GroundController {
         return groundService.buildRouteForGarage(initialPoint);
     }
 
+    @GetMapping("/plane/{planeId}/runway")
+    public List<Long> getRouteToRunway(@PathVariable("planeId") long planeId) {
+
+    }
+
     //todo Тестировать маршруты с несколькими машинками / препятствиями
 
 }
