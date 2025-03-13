@@ -43,9 +43,9 @@ public class GroundController {
         return groundService.buildRouteForLuggage(initialPoint);
     }
 
-    @GetMapping("/garage/{vehicleType}") //todo добавить тип машинок к url'ам?
+    @GetMapping("/garage/{vehicleType}")
     public Boolean canGetOutOfGarage(@PathVariable("vehicleType") VehicleType type) {
-        return groundService.checkIfCarCanGetOutOfGarage(type); //todo Понять что дописать и дописать
+        return groundService.checkIfCarCanGetOutOfGarage(type);
     }
 
     @GetMapping("/plane/{current-point}/{planeId}")
@@ -53,7 +53,6 @@ public class GroundController {
         return groundService.buildRouteForPlane(initialPoint, planeId);
     }
 
-    //todo Метод на выезд из гаража
 
     @GetMapping("/{current-point}/garage")
     public List<Long> getBackToGarage(@PathVariable("current-point") long initialPoint) {

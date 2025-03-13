@@ -10,12 +10,11 @@ import org.jgrapht.graph.concurrent.AsSynchronizedGraph;
 import org.springframework.stereotype.Component;
 import ru.deathkiller2009.ground.dispatcher.Adjacency;
 import ru.deathkiller2009.ground.dispatcher.MapDao;
-import ru.deathkiller2009.ground.dispatcher.logic.exception.NoSpaceException;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-//todo Добавить точки для самолетов
+
 @Component
 public class AirportMap {
 
@@ -68,10 +67,15 @@ public class AirportMap {
         System.out.println(map);
         edges = mapDao.getEdges();
         edges.forEach(adjacency -> map.addEdge(adjacency.getNode(), adjacency.getNeighbourNode(), new DefaultEdge()));
+
+        GraphPoint plane = graphPoints.get(42L); //todo УДАЛИ ЭТО ДЛЯ ТЕСТА
+        plane.setStatus(Status.OCCUPIED);
+        plane.setVehicleType(VehicleType.PLANE);
+        plane.setVehicleId(4L);
     }
 
     private List<GraphPoint> buildRoute(long initialPoint, long targetPoint) {
-        Graph<GraphPoint, DefaultEdge> clearedGraph = removeObstacles();
+        Graph<GraphPoint, DefaultEdge> clearedGraph = removeObstacles(initialPoint);
         BFSShortestPath<GraphPoint, DefaultEdge> bfsShortestPath = new BFSShortestPath<>(clearedGraph);
         Map<Long, GraphPoint> vertexes = clearedGraph.vertexSet().stream()
                 .collect(Collectors.toMap(GraphPoint::getId, Function.identity()));
@@ -79,17 +83,17 @@ public class AirportMap {
         return path.getVertexList();
     }
 
-    private Graph<GraphPoint, DefaultEdge> removeObstacles() {
+    private Graph<GraphPoint, DefaultEdge> removeObstacles(long initialPoint) {
 
         Graph<GraphPoint, DefaultEdge> copy = new AsSynchronizedGraph<>(new DefaultUndirectedGraph<>(DefaultEdge.class));
 
         Map<Long, GraphPoint> filteredVertexes = map.vertexSet()
-                .stream().filter(graphPoint -> graphPoint.getStatus() == Status.EMPTY)
-                .collect(Collectors.toMap(GraphPoint::getId, Function.identity())); //todo Initial Point может быть со статусом занято
+                .stream().filter(graphPoint -> graphPoint.getStatus() == Status.EMPTY || graphPoint.getId() == initialPoint)
+                .collect(Collectors.toMap(GraphPoint::getId, Function.identity()));
 
         filteredVertexes.values().forEach(copy::addVertex);
 
-        List<Adjacency> adjacencyList = edges.stream().filter(adjacency -> filteredVertexes.containsKey(adjacency.getNode().getId()) || filteredVertexes.containsKey(adjacency.getNeighbourNode().getId()))
+        List<Adjacency> adjacencyList = edges.stream().filter(adjacency -> filteredVertexes.containsKey(adjacency.getNode().getId()) && filteredVertexes.containsKey(adjacency.getNeighbourNode().getId()))
                 .toList();
 
         adjacencyList.forEach(adjacency -> copy.addEdge(adjacency.getNode(), adjacency.getNeighbourNode(), new DefaultEdge()));
@@ -161,7 +165,7 @@ public class AirportMap {
                 .findFirst().get();
         Random random = new Random();
         GraphPoint endPoint = carStopPoints.get(plane.getId()).stream().filter(graphPoint -> graphPoint.getStatus() == Status.EMPTY)
-                .findAny().orElse(carStopPoints.get(plane.getId()).get(random.nextInt(0, carStopPoints.size())));
+                .findAny().orElse(carStopPoints.get(plane.getId()).get(random.nextInt(0, carStopPoints.get(plane.getId()).size() - 1)));
         return buildRoute(initialPoint, endPoint.getId());
     }
 }
