@@ -61,7 +61,7 @@ public class GroundController {
 
     @GetMapping("/plane/{planeId}/runway")
     public List<Long> getRouteToRunway(@PathVariable("planeId") long planeId) {
-
+        throw new UnsupportedOperationException();
     }
 
     //todo Тестировать маршруты с несколькими машинками / препятствиями
