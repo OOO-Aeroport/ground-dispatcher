@@ -3,6 +3,7 @@ package ru.deathkiller2009.ground.dispatcher.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.deathkiller2009.ground.dispatcher.logic.VehicleType;
 import ru.deathkiller2009.ground.dispatcher.service.GroundService;
@@ -10,6 +11,7 @@ import ru.deathkiller2009.ground.dispatcher.service.GroundService;
 import java.util.List;
 
 @RestController
+@RequestMapping("/dispatcher")
 public class GroundController {
 
     private final GroundService groundService;
@@ -43,9 +45,10 @@ public class GroundController {
         return groundService.buildRouteForLuggage(initialPoint);
     }
 
-    @GetMapping("/garage/{vehicleType}")
-    public Boolean canGetOutOfGarage(@PathVariable("vehicleType") VehicleType type) {
-        return groundService.checkIfCarCanGetOutOfGarage(type);
+    @GetMapping("/garage/{vehicleType}") //todo Спросить стоит ли добавлять id
+    public Boolean canGetOutOfGarage(@PathVariable("vehicleType") String type) {
+        VehicleType vehicleType = VehicleType.valueOf(type.toUpperCase());
+        return groundService.checkIfCarCanGetOutOfGarage(vehicleType);
     }
 
     @GetMapping("/plane/{current-point}/{planeId}")
@@ -53,17 +56,37 @@ public class GroundController {
         return groundService.buildRouteForPlane(initialPoint, planeId);
     }
 
+    @GetMapping("/plane/runway/{current-point}/{planeId}")
+    public List<Long> getRouteToPlaneOnRunway(@PathVariable("current-point") long initialPoint, @PathVariable("planeId") long planeId) {
+        return groundService.buildRouteForPlaneOnRunway(initialPoint, planeId);
+    }
 
     @GetMapping("/{current-point}/garage")
     public List<Long> getBackToGarage(@PathVariable("current-point") long initialPoint) {
         return groundService.buildRouteForGarage(initialPoint);
     }
 
-    @GetMapping("/plane/{planeId}/runway")
-    public List<Long> getRouteToRunway(@PathVariable("planeId") long planeId) {
-        throw new UnsupportedOperationException();
+    @GetMapping("/plane/{planeId}")
+    public List<Long> canLand(@PathVariable("planeId") long planeId) {
+        return groundService.canPlaneLand(planeId);
     }
 
-    //todo Тестировать маршруты с несколькими машинками / препятствиями
+    @GetMapping("/plane/follow-me/{initialPoint}/{targetPoint}")
+    public List<Long> getRouteForParkingSpots(@PathVariable("initialPoint") long initialPoint, @PathVariable("targetPoint") long targetPoint) {
+        return groundService.buildRouteForParkingSpots(initialPoint, targetPoint);
+    }
+
+    @GetMapping("/plane/follow-me/permission/{initialPoint}/{targetPoint}/{planeId}")
+    public Boolean canGoToPoint(@PathVariable("initialPoint") long initialPoint,
+                                @PathVariable("targetPoint") long targetPoint,
+                                @PathVariable("planeId") long planeId) {
+        return groundService.checkIfCarCanGo(initialPoint, targetPoint, planeId);
+    }
+
+    @GetMapping("/plane/takeoff/{planeId}")
+    public List<Long> takeoffRoute(@PathVariable("planeId") long planeId) {
+        return groundService.buildRouteForTakeoff(planeId);
+    }
+
 
 }

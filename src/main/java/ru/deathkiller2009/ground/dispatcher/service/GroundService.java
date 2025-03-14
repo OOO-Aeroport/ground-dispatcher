@@ -59,4 +59,30 @@ public class GroundService {
                 .stream().map(GraphPoint::getId)
                 .toList();
     }
+
+    public List<Long> buildRouteForPlaneOnRunway(long initialPoint, long planeId) {
+        return airportMap.buildRouteForPlaneOnRunway(initialPoint, planeId)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> canPlaneLand(long planeId) {
+        return airportMap.checkIfPlaneCanLand(planeId);
+    }
+
+    public List<Long> buildRouteForParkingSpots(long initialPoint, long targetPoint) {
+        return airportMap.buildRouteForParkingSpots(initialPoint, targetPoint)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public Boolean checkIfCarCanGo(long initialPoint, long targetPoint, long planeId) {
+        return airportMap.checkIfCarCanGo(initialPoint, targetPoint, planeId);
+    }
+
+    public List<Long> buildRouteForTakeoff(long planeId) {
+        return airportMap.buildRouteForTakeoff(planeId)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
 }
