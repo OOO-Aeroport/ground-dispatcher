@@ -153,14 +153,14 @@ public class AirportMap {
         if (target.getStatus() == Status.EMPTY) {
             initial.setStatus(Status.EMPTY);
             target.setStatus(Status.OCCUPIED);
-//            restClient.post().uri("/update_position")
-//                    .body("""
-//                            {
-//                                "start": %d,
-//                                "finish": %d,
-//                                "type": %s
-//                            }
-//                            """.formatted(initialPoint, targetPoint, target.getVehicleType().toString().toLowerCase()));
+            restClient.post().uri("/update_position")
+                    .body("""
+                            {
+                                "start": %d,
+                                "finish": %d,
+                                "type": %s
+                            }
+                            """.formatted(initialPoint, targetPoint, target.getVehicleType().toString().toLowerCase()));
             return true;
         }
         return false;
@@ -312,23 +312,23 @@ public class AirportMap {
             initial.setVehicleId(plane.getVehicleId());
             target.setStatus(Status.OCCUPIED);
 
-//            restClient.post().uri("/update_position")
-//                    .body("""
-//                            {
-//                                "start": %d,
-//                                "finish": %d,
-//                                "type": %s
-//                            }
-//                            """.formatted(initialPoint, targetPoint, target.getVehicleType().toString().toLowerCase()));
-//
-//            restClient.post().uri("/update_position")
-//                    .body("""
-//                            {
-//                                "start": %d,
-//                                "finish": %d,
-//                                "type": %s
-//                            }
-//                            """.formatted(planePosition, initialPoint, plane));
+            restClient.post().uri("http:///update_position")
+                    .body("""
+                            {
+                                "start": %d,
+                                "finish": %d,
+                                "type": %s
+                            }
+                            """.formatted(initialPoint, targetPoint, target.getVehicleType().toString().toLowerCase()));
+
+            restClient.post().uri("/update_position")
+                    .body("""
+                            {
+                                "start": %d,
+                                "finish": %d,
+                                "type": %s
+                            }
+                            """.formatted(planePosition, initialPoint, plane));
 
             return true;
         }
