@@ -7,6 +7,7 @@ public enum VehicleType {
     PASSENGER_BUS,
     FOOD_TRUCK,
     LUGGAGE_CAR,
-    FOLLOW_ME
+    FOLLOW_ME,
+    NONE
 
 }

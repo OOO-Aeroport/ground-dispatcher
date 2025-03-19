@@ -27,35 +27,35 @@ public class GroundService {
     }
 
     public List<Long> buildRouteForTerminal1(long initialPoint) {
-        return airportMap.buildRouteForTerminal1(initialPoint)
+        return airportMap.buildRouteForTerminal1FromGarage(initialPoint)
                 .stream().map(GraphPoint::getId)
                 .toList();
     }
 
     public List<Long> buildRouteForTerminal2(long initialPoint) {
-        return airportMap.buildRouteForTerminal2(initialPoint)
+        return airportMap.buildRouteForTerminal2FromGarage(initialPoint)
                 .stream().map(GraphPoint::getId)
                 .toList();
     }
 
-    public List<Long> buildRouteForLuggage(long initialPoint) {
-        return airportMap.buildRouteForLuggage(initialPoint)
-                .stream().map(GraphPoint::getId)
-                .toList();
-    }
+//    public List<Long> buildRouteForLuggage(long initialPoint) {
+//        return airportMap.buildRouteForLuggage(initialPoint)
+//                .stream().map(GraphPoint::getId)
+//                .toList();
+//    }
 
     public boolean checkIfCarCanGetOutOfGarage(VehicleType type) {
         return airportMap.checkIfCarCanGetOutOfGarage(type);
     }
 
     public List<Long> buildRouteForGarage(long initialPoint) {
-        return airportMap.buildRouteForGarage(initialPoint)
+        return airportMap.buildRouteForGarageFromPerron(initialPoint)
                 .stream().map(GraphPoint::getId)
                 .toList();
     }
 
     public List<Long> buildRouteForPlane(long initialPoint, long planeId) {
-        return airportMap.buildRouteForPlane(initialPoint, planeId)
+        return airportMap.buildRouteForPlaneFromGarage(initialPoint, planeId)
                 .stream().map(GraphPoint::getId)
                 .toList();
     }
@@ -82,6 +82,68 @@ public class GroundService {
 
     public List<Long> buildRouteForTakeoff(long planeId) {
         return airportMap.buildRouteForTakeoff(planeId)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public void goToGarage(long point) {
+        airportMap.goToGarage(point);
+    }
+
+    public void takeoff(long point) {
+        airportMap.takeoff(point);
+    }
+
+    public List<Long> buildRouteForPlaneForFuel(long initialPoint, long planeId) {
+        return airportMap.buildRouteForPlaneForFuelTruck(initialPoint, planeId)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> buildRouteForGasFromPerron(long initialPoint) {
+        return airportMap.buildRouteForGasFromPerron(initialPoint)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> buildRouteForLuggageFromGarage(long initialPoint) {
+        return airportMap.buildRouteForLuggageFromGarage(initialPoint)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> buildRouteForLuggageFromPlane(long initialPoint) {
+        return airportMap.buildRouteForLuggageFromPlane(initialPoint)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> buildRouteForPlaneForLuggage(long initialPoint, long planeId) {
+        return airportMap.buildRouteForPlaneFromLuggage(initialPoint, planeId)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> buildRouteForTerminal1FromPlane(long initialPoint) {
+        return airportMap.buildRouteForTerminal1FromPlane(initialPoint)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> buildRouteForTerminal2FromPlane(long initialPoint) {
+        return airportMap.buildRouteForTerminal2FromPlane(initialPoint)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> buildRouteToPlaneFromTerminal1(long initialPoint, long planeId) {
+        return airportMap.buildRouteForPlaneFromTerminal1(initialPoint, planeId)
+                .stream().map(GraphPoint::getId)
+                .toList();
+    }
+
+    public List<Long> buildRouteToPlaneFromTerminal2(long initialPoint, long planeId) {
+        return airportMap.buildRouteForPlaneFromTerminal2(initialPoint, planeId)
                 .stream().map(GraphPoint::getId)
                 .toList();
     }

@@ -1,10 +1,8 @@
 package ru.deathkiller2009.ground.dispatcher.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.deathkiller2009.ground.dispatcher.logic.VehicleType;
 import ru.deathkiller2009.ground.dispatcher.service.GroundService;
 
@@ -25,6 +23,11 @@ public class GroundController {
         return groundService.buildRouteForGas(initialPoint);
     }
 
+    @GetMapping("/plane/{current-point}/gas")
+    public List<Long> getRouteGasFromPerron(@PathVariable("current-point") long initialPoint) {
+        return groundService.buildRouteForGasFromPerron(initialPoint);
+    }
+
     @GetMapping("/point/{current-point}/{target}")
     public ResponseEntity<Boolean> canGoToPoint(@PathVariable("current-point") long initialPoint, @PathVariable("target") int targetPoint) {
         return ResponseEntity.ok(groundService.checkIfCarCanGo(initialPoint, targetPoint));
@@ -40,9 +43,34 @@ public class GroundController {
         return groundService.buildRouteForTerminal2(initialPoint);
     }
 
+    @GetMapping("plane/{current-point}/terminal1")
+    public List<Long> getRouteTerminal1FromPlane(@PathVariable("current-point") long initialPoint) {
+        return groundService.buildRouteForTerminal1FromPlane(initialPoint);
+    }
+
+    @GetMapping("plane/{current-point}/terminal2")
+    public List<Long> getRouteTerminal2FromPlane(@PathVariable("current-point") long initialPoint) {
+        return groundService.buildRouteForTerminal2FromPlane(initialPoint);
+    }
+
+    @GetMapping("/plane/terminal1/{current-point}/{planeId}")
+    public List<Long> getRouteToPlaneFromTerminal1(@PathVariable("current-point") long initialPoint, @PathVariable("planeId") long planeId) {
+        return groundService.buildRouteToPlaneFromTerminal1(initialPoint, planeId);
+    }
+
+    @GetMapping("/plane/terminal2/{current-point}/{planeId}")
+    public List<Long> getRouteToPlaneFromTerminal2(@PathVariable("current-point") long initialPoint, @PathVariable("planeId") long planeId) {
+        return groundService.buildRouteToPlaneFromTerminal2(initialPoint, planeId);
+    }
+
     @GetMapping("/{current-point}/luggage")
-    public List<Long> getRouteLuggage(@PathVariable("current-point") long initialPoint) {
-        return groundService.buildRouteForLuggage(initialPoint);
+    public List<Long> getRouteLuggageFromGarage(@PathVariable("current-point") long initialPoint) {
+        return groundService.buildRouteForLuggageFromGarage(initialPoint);
+    }
+
+    @GetMapping("/plane/{current-point}/luggage")
+    public List<Long> getRouteLuggageFromPlane(@PathVariable("current-point") long initialPoint) {
+        return groundService.buildRouteForLuggageFromPlane(initialPoint);
     }
 
     @GetMapping("/garage/{vehicleType}") //todo Спросить стоит ли добавлять id
@@ -54,6 +82,16 @@ public class GroundController {
     @GetMapping("/plane/{current-point}/{planeId}")
     public List<Long> getRouteToPlane(@PathVariable("current-point") long initialPoint, @PathVariable("planeId") long planeId) {
         return groundService.buildRouteForPlane(initialPoint, planeId);
+    }
+
+    @GetMapping("/plane/fueltruck/{current-point}/{planeId}")
+    public List<Long> getRouteToPlaneForFuel(@PathVariable("current-point") long initialPoint, @PathVariable("planeId") long planeId) {
+        return groundService.buildRouteForPlaneForFuel(initialPoint, planeId);
+    }
+
+    @GetMapping("/plane/luggage/{current-point}/{planeId}")
+    public List<Long> getRouteToPlaneForLuggage(@PathVariable("current-point") long initialPoint, @PathVariable("planeId") long planeId) {
+        return groundService.buildRouteForPlaneForLuggage(initialPoint, planeId);
     }
 
     @GetMapping("/plane/runway/{current-point}/{planeId}")
@@ -88,5 +126,18 @@ public class GroundController {
         return groundService.buildRouteForTakeoff(planeId);
     }
 
+    //todo Написать метод для удаления машинки с графа - помещение её в гараж
+
+    @DeleteMapping("/garage/free/{endPoint}")
+    public void deleteCar(@PathVariable("endPoint") long point) {
+        groundService.goToGarage(point);
+    }
+
+    //todo Написать метод для удаления самолета - он в вк
+
+    @DeleteMapping("/plane/takeoff/{endpoint}")
+    public void deletePlane(@PathVariable("endpoint") long point) {
+        groundService.takeoff(point);
+    }
 
 }
