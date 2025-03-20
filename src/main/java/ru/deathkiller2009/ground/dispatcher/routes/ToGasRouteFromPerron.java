@@ -45,9 +45,9 @@ public class ToGasRouteFromPerron {
         Stream<Long> up = Stream.iterate(310L, integer -> integer + 3)
                 .limit(7);
         Stream<Long> up1 = Stream.iterate(311L, integer -> integer + 3)
-                .limit(10);
+                .limit(7);
         Stream<Long> up3 = Stream.iterate(312L, integer -> integer + 3)
-                .limit(10);
+                .limit(7);
 
         Stream<Long> concat = Stream.concat(up, up1);
         List<Long> upp = Stream.concat(concat, up3).toList();
@@ -59,11 +59,11 @@ public class ToGasRouteFromPerron {
         toGasRoute.addAll(upp);
         toGasRoute.addAll(gates);
         toGasRoute.addAll(from);
+        toGasRoute.addAll(gasPoints);
     }
 
     public Predicate<GraphPoint> getRoute(long initialPoint) {
-        return graphPoint -> (graphPoint.getStatus() == Status.EMPTY || graphPoint.getId() == initialPoint || gasPoints.contains(graphPoint.getId())
-                                                                                                              && toGasRoute.contains(graphPoint.getId()));
+        return graphPoint -> (graphPoint.getStatus() == Status.EMPTY || graphPoint.getId() == initialPoint ) && toGasRoute.contains(graphPoint.getId());
     }
 
     public Predicate<GraphPoint> getRouteAnyway(long initialPoint) {

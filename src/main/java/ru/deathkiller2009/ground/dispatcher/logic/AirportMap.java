@@ -84,12 +84,9 @@ public class AirportMap {
 
     private final FromPerronToRunway fromPerronToRunway = new FromPerronToRunway();
 
-    private final ReentrantLock lock1 = new ReentrantLock();
-    private final ReentrantLock lock2 = new ReentrantLock();
-    private final ReentrantLock lock3 = new ReentrantLock();
-    private final ReentrantLock lock4 = new ReentrantLock();
-    private final ReentrantLock lock5 = new ReentrantLock();
-    private final ReentrantLock lock6 = new ReentrantLock();
+    private final FromGarageToPlaneOnRunway fromGarageToPlaneOnRunway = new FromGarageToPlaneOnRunway();
+
+    private final FromRunwayToPerron fromRunwayToPerron = new FromRunwayToPerron();
 
     public AirportMap(RestClient restClient, MapDao mapDao) {
         this.restClient = restClient;
@@ -127,13 +124,11 @@ public class AirportMap {
                 .toList();
 
         followMePoints = Map.of(
-                98L, graphPoints.get(66L),
-                34L, graphPoints.get(2L),
-                102L, graphPoints.get(70L),
-                106L, graphPoints.get(74L),
+                100L, graphPoints.get(68L),
+                36L, graphPoints.get(4L),
+                105L, graphPoints.get(73L),
+                41L, graphPoints.get(9L),
                 110L, graphPoints.get(78L),
-                38L, graphPoints.get(6L),
-                42L, graphPoints.get(10L),
                 46L, graphPoints.get(14L)
         );
 
@@ -147,21 +142,21 @@ public class AirportMap {
 //        plane.setVehicleType(VehicleType.PLANE);
 //        plane.setVehicleId(5L);
 
-        GraphPoint plane1 = graphPoints.get(41L);
-        plane1.setStatus(Status.OCCUPIED);
-        plane1.setVehicleType(VehicleType.PLANE);
-        plane1.setVehicleId(1313L);
+//        GraphPoint plane1 = graphPoints.get(195L);
+//        plane1.setStatus(Status.OCCUPIED);
+//        plane1.setVehicleType(VehicleType.PLANE);
+//        plane1.setVehicleId(1313L);
 
 
-        restClient.post().uri("http://26.21.3.228:4444/update_position")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("""
-                        {
-                            "points": [%d],
-                            "type": "%s"
-                        }
-                        """.formatted(plane1.getId(), plane1.getVehicleType().toString().toLowerCase()))
-                .retrieve().body(String.class);
+//        restClient.post().uri("http://26.21.3.228:4444/update_position")
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .body("""
+//                        {
+//                            "points": [%d],
+//                            "type": "%s"
+//                        }
+//                        """.formatted(plane1.getId(), plane1.getVehicleType().toString().toLowerCase()))
+//                .retrieve().body(String.class);
 //        gas.forEach(graphPoint -> graphPoint.setStatus(Status.OCCUPIED));
     }
 
@@ -262,7 +257,9 @@ public class AirportMap {
         Optional<GraphPoint> gasPoint = gas.stream().filter(graphPoint -> graphPoint.getStatus() == Status.EMPTY)
                 .findAny();
         Random random = new Random();
-        return gasPoint.map(graphPoint -> buildRoute(initialPoint, graphPoint.getId(), toGasRouteFromPerron.getRoute(initialPoint), toGasRouteFromPerron.getRouteAnyway(initialPoint))).orElse(buildRoute(initialPoint, gas.get(random.nextInt(0, garage.size() - 1)).getId(), toGasRouteFromPerron.getRoute(initialPoint), toGasRouteFromPerron.getRouteAnyway(initialPoint)));
+        int index = random.nextInt(0, gas.size() - 1);
+        return gasPoint.map(graphPoint -> buildRoute(initialPoint, graphPoint.getId(), toGasRouteFromPerron.getRoute(initialPoint), toGasRouteFromPerron.getRouteAnyway(initialPoint)))
+                .orElse(buildRoute(initialPoint, gas.get(index).getId(), toGasRouteFromPerron.getRoute(initialPoint), toGasRouteFromPerron.getRouteAnyway(initialPoint)));
     }
 
     public synchronized List<GraphPoint> buildRouteForPlaneForFuelTruck(long initialPoint, long planeId) {
@@ -374,8 +371,10 @@ public class AirportMap {
                 .orElse(buildRoute(initialPoint, terminal2.get(index).getId(), fromPlaneToTerminal2.getRoute(initialPoint, terminal2.get(index).getId()), fromPlaneToTerminal2.getRouteAnyway(initialPoint, terminal2.get(index).getId()))); //todo Исправить!!!
     }
 
+
+
     public synchronized List<GraphPoint> buildRouteForTakeoff(long planeId) { //todo Сделать невозможным заезд на полосу если на ней самолет
-        GraphPoint plane = planeParkSpot.stream().filter(graphPoint -> graphPoint.getId() == planeId).findFirst().get();
+        GraphPoint plane = planeParkSpot.stream().filter(graphPoint -> graphPoint.getVehicleId() == planeId).findFirst().get();
 
         if (runway1.stream().allMatch(graphPoint -> graphPoint.getStatus() == Status.EMPTY && graphPoint.getVehicleId() == 0L)) {
             runway1.forEach(graphPoint -> graphPoint.setVehicleId(planeId));
@@ -388,8 +387,29 @@ public class AirportMap {
         return null;
     }
 
+    public synchronized List<GraphPoint> buildRouteForPlaneOnRunway(long initialPoint, long planeId) {
+        Optional<GraphPoint> graphPointOptional1 = runway1.stream().filter(graphPoint -> graphPoint.getVehicleId() == planeId)
+                .findFirst();
+        Optional<GraphPoint> graphPointOptional = runway2.stream().filter(graphPoint -> graphPoint.getVehicleId() == planeId)
+                .findFirst();
+        GraphPoint planePosition = null;
+        if (graphPointOptional.isPresent()) {
+            planePosition = graphPointOptional.get();
+        } else if (graphPointOptional1.isPresent()) {
+            planePosition = graphPointOptional1.get();
+        }
+        return buildRoute(initialPoint, planePosition.getId() + 1, fromGarageToPlaneOnRunway.getRoute(initialPoint, planePosition.getId() + 1),
+                fromGarageToPlaneOnRunway.getRouteAnyway(initialPoint, planePosition.getId() + 1));
+    }
+
+    public synchronized List<GraphPoint> buildRouteForParkingSpots(long initialPoint, long targetPoint) {
+        List<GraphPoint> route = buildRoute(initialPoint, targetPoint, fromRunwayToPerron.getRoute(initialPoint, targetPoint),
+                fromRunwayToPerron.getRoute(initialPoint, targetPoint));
+        route.add(followMePoints.get(targetPoint));
+        return route;
+    }
+
     public synchronized boolean checkIfCarCanGo(long initialPoint, long targetPoint) { //todo Добавить потокобезопасность
-        lock4.lock();
         Map<Long, GraphPoint> pointMap = map.vertexSet().stream()
                 .collect(Collectors.toMap(GraphPoint::getId, Function.identity()));
         GraphPoint initial = pointMap.get(initialPoint);
@@ -411,10 +431,8 @@ public class AirportMap {
                             """.formatted(initialPoint, targetPoint, target.getVehicleType().toString().toLowerCase()))
                     .retrieve().body(String.class);
             System.out.println(initialPoint + " " + " " + targetPoint + " " + target.getVehicleType());
-            lock4.unlock();
             return true;
         }
-        lock4.unlock();
         return false;
     }
 
@@ -508,20 +526,6 @@ public class AirportMap {
         return canGo;
     }
 
-    public synchronized List<GraphPoint> buildRouteForPlaneOnRunway(long initialPoint, long planeId) {
-        Optional<GraphPoint> graphPointOptional1 = runway1.stream().filter(graphPoint -> graphPoint.getVehicleId() == planeId)
-                .findFirst();
-        Optional<GraphPoint> graphPointOptional = runway2.stream().filter(graphPoint -> graphPoint.getVehicleId() == planeId)
-                .findFirst();
-        GraphPoint planePosition = null;
-        if (graphPointOptional.isPresent()) {
-            planePosition = graphPointOptional.get();
-        } else if (graphPointOptional1.isPresent()) {
-            planePosition = graphPointOptional1.get();
-        }
-        return buildRoute(initialPoint, planePosition.getId() + 1);
-    }
-
     public synchronized List<Long> checkIfPlaneCanLand(long planeId) { //-1 если нельзя!
         List<GraphPoint> park = planeParkSpot.stream().filter(graphPoint -> graphPoint.getStatus() == Status.EMPTY)
                 .toList();
@@ -534,7 +538,7 @@ public class AirportMap {
         GraphPoint spawnPlane;
 
         if (runway1.stream().allMatch(graphPoint -> graphPoint.getStatus() == Status.EMPTY)) {
-            spawnPlane = runway1.get(random.nextInt(0, runway1.size() - 1));
+            spawnPlane = runway1.get(random.nextInt(0, (runway1.size() - 1) / 2));
             spawnPlane.setStatus(Status.OCCUPIED);
             spawnPlane.setVehicleType(VehicleType.PLANE);
             spawnPlane.setVehicleId(planeId);
@@ -570,10 +574,6 @@ public class AirportMap {
         return List.of(spawnPlane.getId(), graphPoint.getId());
     }
 
-    public synchronized List<GraphPoint> buildRouteForParkingSpots(long initialPoint, long targetPoint) {
-        return buildRoute(initialPoint, targetPoint);
-    }
-
     public synchronized Boolean checkIfCarCanGo(long initialPoint, long targetPoint, long planePosition) {
         Map<Long, GraphPoint> pointMap = map.vertexSet().stream()
                 .collect(Collectors.toMap(GraphPoint::getId, Function.identity()));
@@ -582,10 +582,12 @@ public class AirportMap {
         GraphPoint plane = pointMap.get(planePosition);
         if (target.getStatus() == Status.EMPTY || target.getStatus() == Status.CHOSEN_TO_BE_OCCUPIED) {
             plane.setStatus(Status.EMPTY);
-            plane.setVehicleId(0L);
-            initial.setVehicleType(VehicleType.PLANE);
             initial.setVehicleId(plane.getVehicleId());
+            plane.setVehicleId(0L);
+            plane.setVehicleType(VehicleType.NONE);
+            initial.setVehicleType(VehicleType.PLANE);
             target.setStatus(Status.OCCUPIED);
+            target.setVehicleType(VehicleType.FOLLOW_ME);
             restClient.post().uri("http://26.21.3.228:4444/update_position")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("""
@@ -603,9 +605,10 @@ public class AirportMap {
                                 "points": [%d, %d],
                                 "type": "%s"
                             }
-                            """.formatted(planePosition, initialPoint, plane))
+                            """.formatted(planePosition, initialPoint, initial.getVehicleType().toString().toLowerCase()))
                     .retrieve().body(String.class);
-
+            System.out.println(initialPoint + " " + " " + targetPoint + " " + target.getVehicleType());
+            System.out.println(planePosition + " " + " " + initialPoint + " " + initial.getVehicleType());
             return true;
         }
         return false;
@@ -632,7 +635,5 @@ public class AirportMap {
         }
     }
 
-    public Collection<GraphPoint> buildRouteForPlane(long initialPoint, long planeId) {
-        return null;
-    }
+
 }
