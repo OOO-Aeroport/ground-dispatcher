@@ -21,9 +21,9 @@ public class FromPerronToRunway {
         Stream<Long> lower3 = Stream.iterate(65L, integer -> ++integer)
                 .limit(15);
         Stream<Long> lower4 = Stream.iterate(97L, integer -> ++integer)
-                .limit(15);
+                .limit(14);
         Stream<Long> lower5 = Stream.iterate(129L, integer -> ++integer)
-                .limit(15);
+                .limit(14);
         Stream<Long> concated = Stream.concat(lower, lower2);
         Stream<Long> concated1 = Stream.concat(concated, lower3);
         Stream<Long> concated2 = Stream.concat(concated1, lower4);
@@ -38,12 +38,36 @@ public class FromPerronToRunway {
 
         List<Long> runways = Stream.concat(runway1, runway2).toList();
 
+
         perronToRunway = new ArrayList<>(
                 List.of(161L, 216L, 217L, 218L, 219L)
         );
 
+        List<Long> from = new java.util.ArrayList<>(Stream.iterate(80L, integer -> ++integer)
+                .limit(17)
+                .toList());
+
+        List<Long> fromLower = Stream.iterate(48L, integer -> ++integer)
+                .limit(17)
+                .toList();
+
+        from.addAll(fromLower);
+
+
+        List<Long> to = new java.util.ArrayList<>(Stream.iterate(144L, integer -> ++integer)
+                .limit(17)
+                .toList());
+
+        List<Long> toLower = Stream.iterate(112L, integer -> ++integer)
+                .limit(17)
+                .toList();
+
+        to.addAll(toLower);
+
         perronToRunway.addAll(gates);
         perronToRunway.addAll(runways);
+        perronToRunway.addAll(from);
+        perronToRunway.addAll(to);
     }
 
     public Predicate<GraphPoint> getRoute(long initialPoint, long endPoint) {
