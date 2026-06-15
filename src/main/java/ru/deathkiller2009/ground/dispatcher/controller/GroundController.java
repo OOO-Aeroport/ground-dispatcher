@@ -1,6 +1,5 @@
 package ru.deathkiller2009.ground.dispatcher.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.deathkiller2009.ground.dispatcher.logic.VehicleType;
@@ -73,7 +72,7 @@ public class GroundController {
         return groundService.buildRouteForLuggageFromPlane(initialPoint);
     }
 
-    @GetMapping("/garage/{vehicleType}") //todo Спросить стоит ли добавлять id
+    @GetMapping("/garage/{vehicleType}")
     public Boolean canGetOutOfGarage(@PathVariable("vehicleType") String type) {
         VehicleType vehicleType = VehicleType.valueOf(type.toUpperCase());
         return groundService.checkIfCarCanGetOutOfGarage(vehicleType);
@@ -126,14 +125,12 @@ public class GroundController {
         return groundService.buildRouteForTakeoff(planeId);
     }
 
-    //todo Написать метод для удаления машинки с графа - помещение её в гараж
 
     @DeleteMapping("/garage/free/{endPoint}")
     public void deleteCar(@PathVariable("endPoint") long point) {
         groundService.goToGarage(point);
     }
 
-    //todo Написать метод для удаления самолета - он в вк
 
     @DeleteMapping("/plane/takeoff/{endpoint}")
     public void deletePlane(@PathVariable("endpoint") long point) {

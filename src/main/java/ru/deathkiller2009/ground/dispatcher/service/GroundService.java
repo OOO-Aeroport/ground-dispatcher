@@ -38,11 +38,6 @@ public class GroundService {
                 .toList();
     }
 
-//    public List<Long> buildRouteForLuggage(long initialPoint) {
-//        return airportMap.buildRouteForLuggage(initialPoint)
-//                .stream().map(GraphPoint::getId)
-//                .toList();
-//    }
 
     public boolean checkIfCarCanGetOutOfGarage(VehicleType type) {
         return airportMap.checkIfCarCanGetOutOfGarage(type);

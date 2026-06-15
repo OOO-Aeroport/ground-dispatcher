@@ -1,4 +1,4 @@
-package ru.deathkiller2009.ground.dispatcher;
+package ru.deathkiller2009.ground.dispatcher.logic;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

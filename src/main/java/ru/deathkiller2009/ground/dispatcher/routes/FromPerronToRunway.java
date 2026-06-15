@@ -40,7 +40,9 @@ public class FromPerronToRunway {
 
 
         perronToRunway = new ArrayList<>(
-                List.of(161L, 216L, 217L, 218L, 219L)
+                List.of(161L, 162L, 216L, 217L, 218L, 219L, 163L, 164L,
+                        165L, 166L, 211L, 220L, 221L, 266L, 275L, 276L
+                        )
         );
 
         List<Long> from = new java.util.ArrayList<>(Stream.iterate(80L, integer -> ++integer)

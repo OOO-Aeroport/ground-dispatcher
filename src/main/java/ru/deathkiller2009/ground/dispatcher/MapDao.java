@@ -1,12 +1,10 @@
 package ru.deathkiller2009.ground.dispatcher;
 
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultEdge;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import ru.deathkiller2009.ground.dispatcher.logic.Adjacency;
 import ru.deathkiller2009.ground.dispatcher.logic.GraphPoint;
 import ru.deathkiller2009.ground.dispatcher.logic.Status;
 import ru.deathkiller2009.ground.dispatcher.logic.VehicleType;
@@ -51,8 +49,6 @@ public class MapDao implements RowMapper<GraphPoint> {
     public List<Adjacency> getEdges() {
         return jdbcTemplate.query("SELECT * FROM adjacency_list", new AdjacencyRowMapper());
     }
-
-    //todo Добавить сохранение в БД раз в какое-то время
 
     class AdjacencyRowMapper implements RowMapper<Adjacency> {
         @Override

@@ -10,12 +10,10 @@ import org.jgrapht.graph.concurrent.AsSynchronizedGraph;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import ru.deathkiller2009.ground.dispatcher.Adjacency;
 import ru.deathkiller2009.ground.dispatcher.MapDao;
 import ru.deathkiller2009.ground.dispatcher.routes.*;
 
 import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -147,60 +145,6 @@ public class AirportMap {
         System.out.println(map);
         edges = mapDao.getEdges();
         edges.forEach(adjacency -> map.addEdge(adjacency.getNode(), adjacency.getNeighbourNode(), new DefaultEdge()));
-
-//        GraphPoint plane = graphPoints.get(110L);
-//        plane.setStatus(Status.OCCUPIED);
-//        plane.setVehicleType(VehicleType.PLANE);
-//        plane.setVehicleId(5L);
-
-//        GraphPoint plane1 = graphPoints.get(195L);
-//        plane1.setStatus(Status.OCCUPIED);
-//        plane1.setVehicleType(VehicleType.PLANE);
-//        plane1.setVehicleId(1313L);
-
-
-//        restClient.post().uri("http://26.21.3.228:4444/update_position")
-//                .contentType(MediaType.APPLICATION_JSON)
-//                .body("""
-//                        {
-//                            "points": [%d],
-//                            "type": "%s"
-//                        }
-//                        """.formatted(plane1.getId(), plane1.getVehicleType().toString().toLowerCase()))
-//                .retrieve().body(String.class);
-//        gas.forEach(graphPoint -> graphPoint.setStatus(Status.OCCUPIED));
-    }
-
-    private synchronized List<GraphPoint> buildRoute(long initialPoint, long targetPoint) {
-        GraphPath<GraphPoint, DefaultEdge> path = null;
-        while (path == null) {
-            Graph<GraphPoint, DefaultEdge> clearedGraph = removeObstacles(initialPoint);
-            BFSShortestPath<GraphPoint, DefaultEdge> bfsShortestPath = new BFSShortestPath<>(clearedGraph);
-            Map<Long, GraphPoint> vertexes = clearedGraph.vertexSet().stream()
-                    .collect(Collectors.toMap(GraphPoint::getId, Function.identity()));
-            path = bfsShortestPath.getPath(vertexes.get(initialPoint), vertexes.get(targetPoint));
-        }
-        List<GraphPoint> vertexList = path.getVertexList();
-        vertexList.removeFirst();
-        return vertexList;
-    }
-
-    private synchronized Graph<GraphPoint, DefaultEdge> removeObstacles(long initialPoint) {
-        Graph<GraphPoint, DefaultEdge> copy = new AsSynchronizedGraph<>(new DefaultUndirectedGraph<>(DefaultEdge.class));
-
-        Map<Long, GraphPoint> filteredVertexes = map.vertexSet()
-                .stream().filter(graphPoint -> graphPoint.getStatus() == Status.EMPTY
-                                               || graphPoint.getStatus() == Status.CHOSEN_TO_BE_OCCUPIED ||
-                                               graphPoint.getId() == initialPoint)
-                .collect(Collectors.toMap(GraphPoint::getId, Function.identity()));
-
-        filteredVertexes.values().forEach(copy::addVertex);
-
-        List<Adjacency> adjacencyList = edges.stream().filter(adjacency -> filteredVertexes.containsKey(adjacency.getNode().getId()) && filteredVertexes.containsKey(adjacency.getNeighbourNode().getId()))
-                .toList();
-
-        adjacencyList.forEach(adjacency -> copy.addEdge(adjacency.getNode(), adjacency.getNeighbourNode(), new DefaultEdge()));
-        return copy;
     }
 
     private synchronized List<GraphPoint> buildRoute(long initialPoint, long targetPoint, Predicate<GraphPoint> predicate, Predicate<GraphPoint> predicate2) {
@@ -384,8 +328,10 @@ public class AirportMap {
 
 
 
-    public synchronized List<GraphPoint> buildRouteForTakeoff(long planeId) { //todo Сделать невозможным заезд на полосу если на ней самолет
-        GraphPoint plane = planeParkSpot.stream().filter(graphPoint -> graphPoint.getVehicleId() == planeId).findFirst().get();
+    public synchronized List<GraphPoint> buildRouteForTakeoff(long planeId) {
+        GraphPoint plane = map.vertexSet()
+                .stream().filter(graphPoint -> graphPoint.getVehicleId() == planeId)
+                .findFirst().get();
 
         if (runway1.stream().allMatch(graphPoint -> (graphPoint.getStatus() == Status.EMPTY && graphPoint.getVehicleId() == 0L) || graphPoint.getVehicleId().equals(plane.getVehicleId()))) {
             runway1.forEach(graphPoint -> graphPoint.setVehicleId(planeId));
@@ -415,7 +361,7 @@ public class AirportMap {
 
     public synchronized List<GraphPoint> buildRouteForParkingSpots(long initialPoint, long targetPoint) {
         List<GraphPoint> route = buildRoute(initialPoint, targetPoint, fromRunwayToPerron.getRoute(initialPoint, targetPoint),
-                fromRunwayToPerron.getRoute(initialPoint, targetPoint));
+                fromRunwayToPerron.getRouteAnyway(initialPoint, targetPoint));
         GraphPoint followMeStop = followMePoints.get(targetPoint);
         GraphPoint followMeStopBackUp = secondaryFollowMePoints.get(targetPoint);
         if (route.get(route.size() - 2).equals(followMeStop)) {
@@ -428,7 +374,7 @@ public class AirportMap {
         return route;
     }
 
-    public synchronized boolean checkIfCarCanGo(long initialPoint, long targetPoint) { //todo Добавить потокобезопасность
+    public synchronized boolean checkIfCarCanGo(long initialPoint, long targetPoint) {
         Map<Long, GraphPoint> pointMap = map.vertexSet().stream()
                 .collect(Collectors.toMap(GraphPoint::getId, Function.identity()));
         GraphPoint initial = pointMap.get(initialPoint);
@@ -440,7 +386,7 @@ public class AirportMap {
             target.setVehicleId(initial.getVehicleId());
             initial.setVehicleType(VehicleType.NONE);
             initial.setVehicleId(0L);
-            restClient.post().uri("http://26.21.3.228:4444/update_position")
+            restClient.post().uri("http://192.168.35.219:6666/update_position")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("""
                             {
@@ -455,7 +401,7 @@ public class AirportMap {
         return false;
     }
 
-    public synchronized boolean checkIfCarCanGetOutOfGarage(VehicleType type) { //todo В конце машинка должна исчезать с поля
+    public synchronized boolean checkIfCarCanGetOutOfGarage(VehicleType type) {
         boolean canGo = false;
         if (Objects.requireNonNull(type) == VehicleType.FUEL_TRUCK) {
             canGo = garage.stream().anyMatch(graphPoint -> graphPoint.getId() == 300L && graphPoint.getStatus() == Status.EMPTY);
@@ -463,7 +409,7 @@ public class AirportMap {
                 GraphPoint point = garage.stream().filter(graphPoint -> graphPoint.getId() == 300L).findFirst().get();
                 point.setStatus(Status.OCCUPIED);
                 point.setVehicleType(type);
-                restClient.post().uri("http://26.21.3.228:4444/update_position")
+                restClient.post().uri("http://192.168.35.219:6666/update_position")
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
                                 {
@@ -480,7 +426,7 @@ public class AirportMap {
                 GraphPoint point = garage.stream().filter(graphPoint -> graphPoint.getId() == 297L).findFirst().get();
                 point.setStatus(Status.OCCUPIED);
                 point.setVehicleType(type);
-                restClient.post().uri("http://26.21.3.228:4444/update_position")
+                restClient.post().uri("http://192.168.35.219:6666/update_position")
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
                                 {
@@ -497,7 +443,7 @@ public class AirportMap {
                 GraphPoint point = garage.stream().filter(graphPoint -> graphPoint.getId() == 298L).findFirst().get();
                 point.setStatus(Status.OCCUPIED);
                 point.setVehicleType(type);
-                restClient.post().uri("http://26.21.3.228:4444/update_position")
+                restClient.post().uri("http://192.168.35.219:6666/update_position")
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
                                 {
@@ -513,7 +459,7 @@ public class AirportMap {
                 GraphPoint point = garage.stream().filter(graphPoint -> graphPoint.getId() == 299L).findFirst().get();
                 point.setStatus(Status.OCCUPIED);
                 point.setVehicleType(type);
-                restClient.post().uri("http://26.21.3.228:4444/update_position")
+                restClient.post().uri("http://192.168.35.219:6666/update_position")
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
                                 {
@@ -530,7 +476,7 @@ public class AirportMap {
                 GraphPoint point = garage.stream().filter(graphPoint -> graphPoint.getId() == 299L).findFirst().get();
                 point.setStatus(Status.OCCUPIED);
                 point.setVehicleType(type);
-                restClient.post().uri("http://26.21.3.228:4444/update_position")
+                restClient.post().uri("http://192.168.35.219:6666/update_position")
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
                                 {
@@ -561,7 +507,7 @@ public class AirportMap {
             spawnPlane.setStatus(Status.OCCUPIED);
             spawnPlane.setVehicleType(VehicleType.PLANE);
             spawnPlane.setVehicleId(planeId);
-            restClient.post().uri("http://26.21.3.228:4444/update_position")
+            restClient.post().uri("http://192.168.35.219:6666/update_position")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("""
                             {
@@ -575,7 +521,7 @@ public class AirportMap {
             spawnPlane.setStatus(Status.OCCUPIED);
             spawnPlane.setVehicleType(VehicleType.PLANE);
             spawnPlane.setVehicleId(planeId);
-            restClient.post().uri("http://26.21.3.228:4444/update_position")
+            restClient.post().uri("http://192.168.35.219:6666/update_position")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("""
                             {
@@ -608,7 +554,7 @@ public class AirportMap {
             initial.setVehicleType(VehicleType.PLANE);
             target.setStatus(Status.OCCUPIED);
             target.setVehicleType(VehicleType.FOLLOW_ME);
-            restClient.post().uri("http://26.21.3.228:4444/update_position")
+            restClient.post().uri("http://192.168.35.219:6666/update_position")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("""
                             {
@@ -618,7 +564,7 @@ public class AirportMap {
                             """.formatted(initialPoint, targetPoint, target.getVehicleType().toString().toLowerCase()))
                     .retrieve().body(String.class);
 
-            restClient.post().uri("http://26.21.3.228:4444/update_position")
+            restClient.post().uri("http://192.168.35.219:6666/update_position")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("""
                             {
