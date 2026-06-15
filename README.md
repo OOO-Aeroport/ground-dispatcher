@@ -186,7 +186,7 @@ URL: /dispatcher/plane/takeoff/{endpoint}
 
 <img width="472" height="850" alt="image" src="https://github.com/user-attachments/assets/1eb907ca-ebce-4902-8d80-db7fc8e5060f" />
 
-Основная логика приложения описана в классе AirportMap:
+Основная логика приложения описана в классе AirportMap: 
 • `init()` – метод в котором происходит получение информации о графе из базы данных для дальнейшего использования
 • `buildRoute()` – метод для построения маршрута до указанной точки
 • `removeObstacles()` – вспомогательный метод для удаления недоступных мест из графа
